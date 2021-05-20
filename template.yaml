@@ -1,0 +1,76 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  user-api
+
+  Sample SAM Template for user-api
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 3
+
+Resources:
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: users
+      AttributeDefinitions:
+        - AttributeName: user_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: user_id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+
+  UsersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: users/
+      Handler: app.app
+      Runtime: python3.8
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName:
+              !Ref UsersTable
+      Events:
+        Test:
+          Type: Api
+          Properties:
+            Path: /
+            Method: get
+        PutUser:
+          Type: Api
+          Properties:
+            Path: /users
+            Method: post
+        GetUser:
+          Type: Api
+          Properties:
+            Path: /users/{user_id}/
+            Method: get
+        PatchUser:
+          Type: Api
+          Properties:
+            Path: /users/{user_id}/
+            Method: patch
+        DeleteUser:
+          Type: Api
+          Properties:
+            Path: /users/{user_id}/
+            Method: delete
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  UsersApi:
+    Description: "API Gateway endpoint URL for Prod stage for Users function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+  UsersFunction:
+    Description: "Users Lambda Function ARN"
+    Value: !GetAtt UsersFunction.Arn
+  UsersFunctionIamRole:
+    Description: "Implicit IAM Role created for Users function"
+    Value: !GetAtt UsersFunctionRole.Arn
